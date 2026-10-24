@@ -1,0 +1,246 @@
+﻿
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حلواني قصر الصعيدي</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,Arial;background:#fff9ef;color:#28180f}
+header{background:#2c1a10;color:#f3d18c;text-align:center;padding:25px 12px}
+header h1{margin:0 0 8px}
+header p{margin:0;color:#f8e9c8}
+.hero{text-align:center;padding:35px 15px;background:linear-gradient(135deg,#f5e4c4,#fff9ef)}
+.hero h2{font-size:30px}
+.hero button,.add,.checkout{border:0;border-radius:10px;padding:12px 18px;cursor:pointer;font-weight:bold}
+.hero button,.checkout{background:#2c1a10;color:white}
+main{max-width:1200px;margin:auto;padding:25px 14px}
+.products{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px}
+.card{background:white;border:1px solid #eadbc4;border-radius:15px;overflow:hidden;box-shadow:0 5px 18px #0000000c}
+.card img{width:100%;height:190px;object-fit:cover;display:block;background:#f0e1c8}
+.card .actions{padding:10px}
+.add{background:#f0d9a5;color:#442719;width:100%}
+.cart-button{position:fixed;bottom:18px;right:18px;background:#168653;color:white;border:0;border-radius:30px;padding:14px 20px;font-weight:bold;cursor:pointer;z-index:5}
+.overlay{display:none;position:fixed;inset:0;background:#0009;z-index:10;align-items:center;justify-content:center;padding:15px}
+.overlay.show{display:flex}
+.modal{background:#fff9ef;border-radius:16px;padding:20px;width:min(600px,100%);max-height:90vh;overflow:auto}
+.modal h2{margin-top:0}
+.cart-item{display:grid;grid-template-columns:100px 1fr auto;gap:10px;align-items:center;border-bottom:1px solid #eadbc4;padding:12px 0}
+.cart-item img{width:100px;height:75px;object-fit:cover;border-radius:8px}
+.cart-item a{color:#8b6129;overflow-wrap:anywhere;font-size:12px}
+.qty{display:flex;align-items:center;gap:7px}
+.qty button,.remove{border:0;border-radius:6px;padding:7px;cursor:pointer}
+.field{margin:12px 0}
+.field label{display:block;margin-bottom:5px}
+.field input,.field textarea{width:100%;padding:11px;border:1px solid #ddc9a9;border-radius:8px;font:inherit}
+.field textarea{min-height:70px}
+.close{float:left;border:0;background:#eadbc4;border-radius:8px;padding:8px 12px;cursor:pointer}
+.empty{text-align:center;padding:25px}
+footer{text-align:center;background:#2c1a10;color:#f3d18c;padding:20px;margin-top:30px}
+@media(max-width:850px){.products{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card img{height:150px}.hero h2{font-size:24px}.cart-item{grid-template-columns:75px 1fr}.cart-item img{width:75px;height:70px}.cart-item .remove{grid-column:2}}
+</style>
+</head>
+<body>
+
+<header>
+<h1>♛ حلواني قصر الصعيدي</h1>
+<p>حلاوة من القلب لكل مناسبة</p>
+</header>
+
+<section class="hero">
+<h2>اختار الصور اللي تعجبك</h2>
+<p>ضيف اختياراتك للسلة وابعت طلبك مباشرة على واتساب.</p>
+<button onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">تصفح الصور ↓</button>
+</section>
+
+<main id="products">
+<h2 style="text-align:center">قائمة الحلويات</h2>
+<div class="products" id="productGrid"></div>
+</main>
+
+<button class="cart-button" onclick="openCart()">🛒 السلة (<span id="count">0</span>)</button>
+
+<div class="overlay" id="cartOverlay">
+<div class="modal">
+<button class="close" onclick="closeCart()">إغلاق ✕</button>
+<h2>سلة طلبك</h2>
+<div id="cartItems"></div>
+<div id="checkoutFields" style="display:none">
+<div class="field">
+<label for="customerName">اسم العميل (اختياري)</label>
+<input id="customerName" placeholder="اكتب اسمك">
+</div>
+<div class="field">
+<label for="customerPhone">رقم التواصل (اختياري)</label>
+<input id="customerPhone" type="tel" placeholder="رقم الموبايل">
+</div>
+<div class="field">
+<label for="customerNotes">العنوان أو ملاحظات الطلب</label>
+<textarea id="customerNotes" placeholder="اكتب تفاصيل الطلب"></textarea>
+</div>
+<button class="checkout" onclick="checkout()">إرسال الطلب على واتساب ↗</button>
+</div>
+</div>
+</div>
+
+<footer>© حلواني قصر الصعيدي — كل الحقوق محفوظة</footer>
+
+<script>
+const WHATSAPP = "201141957253";
+
+const images = [
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859352/IMG-20261024-WA0120.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859355/IMG-20261024-WA0112.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859353/IMG-20261024-WA0116.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859352/IMG-20261024-WA0126.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859352/IMG_%D9%A2%D9%A0%D9%A2%D9%A6%D9%A1%D9%A0%D9%A2%D9%A4_%D9%A1%D9%A7%D9%A5%D9%A4%D9%A3%D9%A7.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859349/IMG_%D9%A2%D9%A0%D9%A2%D9%A6%D9%A1%D9%A0%D9%A2%D9%A4_%D9%A1%D9%A7%D9%A5%D9%A5%D9%A4%D9%A9.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859351/IMG-20261024-WA0125.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859348/IMG-20261024-WA0035.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859349/IMG-20261024-WA0127.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859347/IMG_%D9%A2%D9%A0%D9%A2%D9%A6%D9%A1%D9%A0%D9%A2%D9%A4_%D9%A1%D9%A7%D9%A5%D9%A6%D9%A5%D9%A7.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859344/IMG-20261024-WA0101.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859347/IMG_%D9%A2%D9%A0%D9%A2%D9%A6%D9%A1%D9%A0%D9%A2%D9%A4_%D9%A1%D9%A8%D9%A0%D9%A2%D9%A3%D9%A5.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859343/IMG-20261024-WA0122_1.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859344/IMG-20261024-WA0118.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859340/IMG-20261024-WA0039.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859342/IMG-20261024-WA0086.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859340/IMG-20261024-WA0025.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859340/IMG-20261024-WA0024.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859340/IMG-20261024-WA0022.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859338/IMG-20261024-WA0034.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859338/IMG-20261024-WA0030.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859338/IMG-20261024-WA0037.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859336/IMG-20261024-WA0038.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859336/IMG-20261024-WA0036.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859335/IMG-20261024-WA0044.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859335/IMG-20261024-WA0049.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859332/IMG-20261024-WA0053.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859334/IMG-20261024-WA0043.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859332/IMG-20261024-WA0056.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859332/IMG-20261024-WA0057.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859330/IMG-20261024-WA0054.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859331/IMG-20261024-WA0061.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859327/IMG-20261024-WA0060.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859328/IMG-20261024-WA0055.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859325/IMG-20261024-WA0058.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859327/IMG-20261024-WA0059.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859324/IMG-20261024-WA0063.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859325/IMG-20261024-WA0064.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859320/IMG-20261024-WA0068.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859323/IMG-20261024-WA0066.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859319/IMG-20261024-WA0072.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859319/IMG-20261024-WA0075.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859317/IMG-20261024-WA0076.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859318/IMG-20261024-WA0080.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859316/IMG-20261024-WA0077.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859317/IMG-20261024-WA0082.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859315/IMG-20261024-WA0084.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859316/IMG-20261024-WA0079.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859315/IMG-20261024-WA0085.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859315/IMG-20261024-WA0081.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859310/IMG-20261024-WA0088.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859310/IMG-20261024-WA0091.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859309/IMG-20261024-WA0094.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859310/IMG-20261024-WA0093.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859308/IMG-20261024-WA0095.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859309/IMG-20261024-WA0096.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859307/IMG-20261024-WA0023.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859307/IMG-20261024-WA0017.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792858406/IMG_%D9%A2%D9%A0%D9%A2%D9%A6%D9%A1%D9%A0%D9%A2%D9%A4_%D9%A1%D9%A8%D9%A0%D9%A1%D9%A1%D9%A1.jpg',
+'https://res.cloudinary.com/dlovevzd/image/upload/v1792859307/IMG-20261024-WA0005.jpg'
+];
+
+let cart = {};
+
+const grid = document.getElementById('productGrid');
+grid.innerHTML = images.map((url,i) => `
+<article class="card">
+  <a href="${url}" target="_blank" rel="noopener" title="فتح الصورة مباشرة">
+    <img src="${url}" alt="" loading="lazy">
+  </a>
+  <div class="actions">
+    <button class="add" onclick="addToCart(${i})">＋ إضافة للسلة</button>
+  </div>
+</article>`).join('');
+
+function addToCart(i){
+  cart[i] = (cart[i] || 0) + 1;
+  updateCount();
+}
+function updateCount(){
+  document.getElementById('count').textContent =
+    Object.values(cart).reduce((sum,n)=>sum+n,0);
+}
+function openCart(){
+  document.getElementById('cartOverlay').classList.add('show');
+  renderCart();
+}
+function closeCart(){
+  document.getElementById('cartOverlay').classList.remove('show');
+}
+function renderCart(){
+  const root = document.getElementById('cartItems');
+  const fields = document.getElementById('checkoutFields');
+  const ids = Object.keys(cart);
+  if(!ids.length){
+    root.innerHTML='<div class="empty">السلة فاضية، اختار الصور اللي تعجبك.</div>';
+    fields.style.display='none';
+    return;
+  }
+  fields.style.display='block';
+  root.innerHTML = ids.map(key=>{
+    const i=Number(key), url=images[i];
+    return `<div class="cart-item">
+      <a href="${url}" target="_blank" rel="noopener">
+        <img src="${url}" alt="صورة رقم ${i+1}">
+        فتح الصورة رقم ${i+1}
+      </a>
+      <div class="qty">
+        <button onclick="changeQty(${i},-1)">−</button>
+        <strong>${cart[i]}</strong>
+        <button onclick="changeQty(${i},1)">＋</button>
+      </div>
+      <button class="remove" onclick="removeItem(${i})">حذف</button>
+    </div>`;
+  }).join('');
+}
+function changeQty(i,amount){
+  cart[i]=(cart[i]||0)+amount;
+  if(cart[i]<=0) delete cart[i];
+  updateCount();
+  renderCart();
+}
+function removeItem(i){
+  delete cart[i];
+  updateCount();
+  renderCart();
+}
+function checkout(){
+  const ids=Object.keys(cart);
+  if(!ids.length) return;
+  const name=document.getElementById('customerName').value.trim();
+  const phone=document.getElementById('customerPhone').value.trim();
+  const notes=document.getElementById('customerNotes').value.trim();
+  const lines=ids.map(key=>{
+    const i=Number(key);
+    return `صورة رقم ${i+1} × ${cart[i]}\n${images[i]}`;
+  });
+  const message=[
+    'أهلاً بكم في حلواني قصر الصعيدي',
+    'الطلب:',
+    ...lines,
+    name?'اسم العميل: '+name:'',
+    phone?'رقم التواصل: '+phone:'',
+    notes?'العنوان / الملاحظات: '+notes:''
+  ].filter(Boolean).join('\n\n');
+  window.open('https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(message),'_blank','noopener');
+}
+document.getElementById('cartOverlay').addEventListener('click',e=>{
+  if(e.target.id==='cartOverlay') closeCart();
+});
+</script>
+</body>
+</html>
